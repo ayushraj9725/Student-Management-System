@@ -4,63 +4,37 @@ A full-stack web application designed for academic student records management bu
 
 ---
 
+## 📖 Project Documentation Directory
+Complete project specifications and architectural guides are available in the **[`docs/`](./docs/README.md)** directory:
+- 📜 [01. Rules & Regulations Document](./docs/01_rules_and_regulations.md) — Coding conventions, architecture, and security rules.
+- ⚠️ [02. System Limitations Document](./docs/02_limitations_document.md) — Scope boundaries, constraints, and future scope.
+- 📋 [03. Component Requirements Discussion](./docs/03_component_requirements_discussion.md) — Detailed functional requirements per component.
+- 🎨 [04. Component Design Document](./docs/04_component_design_document.md) — UI/UX wireframes and White/Black/Blue design tokens.
+- 🛠️ [05. Technology Stack Document](./docs/05_technology_stack_document.md) — Framework versions, dependency details, and environment setup.
+- 📦 [06. Implementation Modules Document](./docs/06_implementation_modules_document.md) — Module architecture, MySQL schema, and execution lifecycles.
+
+---
+
 ## 🛠️ Technology Stack
 
 - **Backend:** Java 21, Spring Boot 4, Spring Web, Spring Data JPA, Hibernate
 - **Database:** MySQL Server 8.0+ (`student_db`)
 - **Frontend:** React 19, Vite, Vanilla CSS (White, Black & Blue theme)
-- **API Communication:** RESTful JSON endpoints (`http://localhost:8081/api`)
+- **API Communication:** RESTful JSON endpoints (`http://localhost:8085/api/v1`)
 
 ---
 
-## 🗄️ Database Setup (MySQL)
+## 🗄️ Database Setup (Neon PostgreSQL)
 
-### Step 1: Ensure MySQL Server is Running
-Make sure your MySQL service is running on default port `3306`.
+### Step 1: Ensure Neon Database Connection
+The application connects to the cloud Neon PostgreSQL database configured in `application.properties`.
 
-### Step 2: Create the Database
-Open MySQL Workbench, phpMyAdmin, or your terminal:
-```sql
-CREATE DATABASE IF NOT EXISTS student_db;
-USE student_db;
-```
-
-### Step 3: Table Schema
-Spring Boot (`spring.jpa.hibernate.ddl-auto=update`) automatically creates the tables on startup. If you wish to create them manually:
-
-```sql
--- Students Table
-CREATE TABLE IF NOT EXISTS students (
-    id BIGINT NOT NULL PRIMARY KEY,
-    full_name VARCHAR(100) NOT NULL,
-    email VARCHAR(100),
-    course VARCHAR(100) NOT NULL,
-    semester INT NOT NULL
-);
-
--- Users Table (Management Authentication)
-CREATE TABLE IF NOT EXISTS users (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    full_name VARCHAR(100),
-    role VARCHAR(50) DEFAULT 'ADMIN',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-### Step 4: Verify Database Credentials
+### Step 2: Verify Configuration
 Check `backend/src/main/resources/application.properties`:
 ```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/student_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
-spring.datasource.username=root
-spring.datasource.password=@Ascent1225
-spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
-
-server.port=8081
-spring.jpa.hibernate.ddl-auto=update
+server.port=8085
+spring.profiles.active=dev
 ```
-*(If your MySQL root password differs, simply update `spring.datasource.password`)*.
 
 ---
 
@@ -75,8 +49,8 @@ Open a terminal in the project directory:
 cd backend
 .\mvnw.cmd spring-boot:run
 ```
-- **Backend Port:** `http://localhost:8081`
-- **Health Check:** Open `http://localhost:8081/api/students` in your browser.
+- **Backend Port:** `http://localhost:8085`
+- **Health Check:** Open `http://localhost:8085/api/v1/auth/login` or test endpoints.
 *(Or double-click `start_backend.bat`)*
 
 ---

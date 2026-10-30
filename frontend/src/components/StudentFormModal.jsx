@@ -1,13 +1,19 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
+import { X, Check, RotateCcw, UserPlus, Edit3 } from 'lucide-react';
 
 export default function StudentFormModal({
   isOpen,
   onClose,
+  onSave,
   onSubmit,
+  student,
   initialData,
   isSubmitting,
 }) {
-  const isEditMode = Boolean(initialData && initialData.id);
+  const effectiveData = student || initialData;
+  const isEditMode = Boolean(effectiveData && effectiveData.id);
 
   const defaultForm = {
     id: '',
@@ -21,19 +27,19 @@ export default function StudentFormModal({
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    if (initialData) {
+    if (effectiveData) {
       setFormData({
-        id: initialData.id || '',
-        fullName: initialData.fullName || '',
-        email: initialData.email || '',
-        course: initialData.course || 'Computer Science',
-        semester: initialData.semester || 1,
+        id: effectiveData.id || '',
+        fullName: effectiveData.fullName || '',
+        email: effectiveData.email || '',
+        course: effectiveData.course || 'Computer Science',
+        semester: effectiveData.semester || 1,
       });
     } else {
       setFormData(defaultForm);
     }
     setErrors({});
-  }, [initialData, isOpen]);
+  }, [effectiveData, isOpen]);
 
   if (!isOpen) return null;
 
@@ -78,17 +84,21 @@ export default function StudentFormModal({
       semester: Number(formData.semester),
     };
 
-    onSubmit(payload, isEditMode);
+    if (onSave) {
+      onSave(payload, isEditMode);
+    } else if (onSubmit) {
+      onSubmit(payload, isEditMode);
+    }
   };
 
   const handleReset = () => {
     if (isEditMode) {
       setFormData({
-        id: initialData.id,
-        fullName: initialData.fullName,
-        email: initialData.email || '',
-        course: initialData.course,
-        semester: initialData.semester,
+        id: effectiveData.id,
+        fullName: effectiveData.fullName,
+        email: effectiveData.email || '',
+        course: effectiveData.course,
+        semester: effectiveData.semester,
       });
     } else {
       setFormData(defaultForm);
@@ -98,30 +108,73 @@ export default function StudentFormModal({
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3 className="modal-title">
-            {isEditMode ? 'Edit Student Details' : 'Add New Student'}
-          </h3>
+      <div
+        className="modal-box"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          maxWidth: '520px',
+          borderRadius: 'var(--radius-lg)',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+        }}
+      >
+        <div
+          className="modal-header"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingBottom: '16px',
+            borderBottom: '1px solid #f1f5f9',
+            marginBottom: '20px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '8px',
+                backgroundColor: isEditMode ? 'var(--pastel-pink-bg)' : 'var(--pastel-blue-bg)',
+                color: isEditMode ? 'var(--pastel-pink-icon)' : 'var(--pastel-blue-icon)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {isEditMode ? <Edit3 size={18} /> : <UserPlus size={18} />}
+            </div>
+            <div>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0f172a' }}>
+                {isEditMode ? 'Edit Student Details' : 'Enroll New Student'}
+              </h3>
+              <p style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                {isEditMode
+                  ? 'Update institutional enrollment record information'
+                  : 'Register a student into the current institutional scope'}
+              </p>
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={onClose}
             style={{
               background: 'none',
               border: 'none',
-              fontSize: '1.25rem',
               cursor: 'pointer',
-              color: 'var(--text-muted)',
+              color: '#94a3b8',
+              padding: '4px',
+              borderRadius: '6px',
             }}
           >
-            &times;
+            <X size={18} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
+          <div className="form-group" style={{ marginBottom: '14px' }}>
             <label className="form-label" htmlFor="form-student-id">
-              Student ID {isEditMode ? '(Cannot be changed)' : '*'}
+              Student ID {isEditMode ? '(Institutional Key - Read Only)' : '*'}
             </label>
             <input
               id="form-student-id"
@@ -138,7 +191,7 @@ export default function StudentFormModal({
             {errors.id && <div className="form-error">{errors.id}</div>}
           </div>
 
-          <div className="form-group">
+          <div className="form-group" style={{ marginBottom: '14px' }}>
             <label className="form-label" htmlFor="form-full-name">
               Full Name *
             </label>
@@ -156,7 +209,7 @@ export default function StudentFormModal({
             {errors.fullName && <div className="form-error">{errors.fullName}</div>}
           </div>
 
-          <div className="form-group">
+          <div className="form-group" style={{ marginBottom: '14px' }}>
             <label className="form-label" htmlFor="form-email">
               Email Address
             </label>
@@ -174,55 +227,67 @@ export default function StudentFormModal({
             {errors.email && <div className="form-error">{errors.email}</div>}
           </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="form-course">
-              Course *
-            </label>
-            <select
-              id="form-course"
-              className="form-input"
-              value={formData.course}
-              onChange={(e) => {
-                setFormData({ ...formData, course: e.target.value });
-                if (errors.course) setErrors({ ...errors, course: null });
-              }}
-            >
-              <option value="Computer Science">Computer Science</option>
-              <option value="Information Technology">Information Technology</option>
-              <option value="Data Science">Data Science</option>
-              <option value="Electronics & Communication">Electronics & Communication</option>
-              <option value="Mechanical Engineering">Mechanical Engineering</option>
-              <option value="Civil Engineering">Civil Engineering</option>
-            </select>
-            {errors.course && <div className="form-error">{errors.course}</div>}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="form-course">
+                Academic Program *
+              </label>
+              <select
+                id="form-course"
+                className="form-input"
+                value={formData.course}
+                onChange={(e) => {
+                  setFormData({ ...formData, course: e.target.value });
+                  if (errors.course) setErrors({ ...errors, course: null });
+                }}
+              >
+                <option value="Computer Science">Computer Science</option>
+                <option value="Information Technology">Information Technology</option>
+                <option value="Data Science">Data Science</option>
+                <option value="Electronics & Communication">Electronics & Communication</option>
+                <option value="Mechanical Engineering">Mechanical Engineering</option>
+                <option value="Civil Engineering">Civil Engineering</option>
+              </select>
+              {errors.course && <div className="form-error">{errors.course}</div>}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="form-semester">
+                Curriculum Semester *
+              </label>
+              <select
+                id="form-semester"
+                className="form-input"
+                value={formData.semester}
+                onChange={(e) => {
+                  setFormData({ ...formData, semester: parseInt(e.target.value, 10) });
+                  if (errors.semester) setErrors({ ...errors, semester: null });
+                }}
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
+                  <option key={s} value={s}>
+                    Semester {s}
+                  </option>
+                ))}
+              </select>
+              {errors.semester && <div className="form-error">{errors.semester}</div>}
+            </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="form-semester">
-              Semester (1 to 8) *
-            </label>
-            <select
-              id="form-semester"
-              className="form-input"
-              value={formData.semester}
-              onChange={(e) => {
-                setFormData({ ...formData, semester: parseInt(e.target.value, 10) });
-                if (errors.semester) setErrors({ ...errors, semester: null });
-              }}
-            >
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
-                <option key={s} value={s}>
-                  Semester {s}
-                </option>
-              ))}
-            </select>
-            {errors.semester && <div className="form-error">{errors.semester}</div>}
-          </div>
-
-          <div className="modal-actions">
+          <div
+            className="modal-actions"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              gap: '10px',
+              paddingTop: '16px',
+              borderTop: '1px solid #f1f5f9',
+            }}
+          >
             <button
               type="button"
-              className="btn btn-outline"
+              className="btn-executive-secondary"
               onClick={onClose}
               disabled={isSubmitting}
             >
@@ -230,23 +295,27 @@ export default function StudentFormModal({
             </button>
             <button
               type="button"
-              className="btn btn-outline"
+              className="btn-executive-secondary"
               onClick={handleReset}
               disabled={isSubmitting}
             >
-              Reset
+              <RotateCcw size={14} />
+              <span>Reset</span>
             </button>
             <button
               type="submit"
               id="btn-save-student"
-              className="btn btn-primary"
+              className="btn-executive-primary"
               disabled={isSubmitting}
             >
-              {isSubmitting
-                ? 'Saving...'
-                : isEditMode
-                ? 'Update Student'
-                : 'Save Student'}
+              <Check size={15} />
+              <span>
+                {isSubmitting
+                  ? 'Saving...'
+                  : isEditMode
+                  ? 'Update Details'
+                  : 'Enroll Student'}
+              </span>
             </button>
           </div>
         </form>

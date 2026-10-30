@@ -1,7 +1,8 @@
 @echo off
 echo ========================================================
-echo Starting Student Management System - Spring Boot Backend
+echo Starting Student Management System - Backend (Port 8085)
 echo ========================================================
 cd /d "%~dp0backend"
-call mvnw.cmd spring-boot:run
+set SERVER_PORT=8085
+call mvnw.cmd spring-boot:run "-Dspring-boot.run.arguments=--server.port=8085"
 pause
