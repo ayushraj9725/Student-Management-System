@@ -88,15 +88,24 @@ export function clearAuthToken(): void {
 }
 
 let isRefreshing = false;
-let refreshSubscribers: ((newToken: string) => void)[] = [];
+interface RefreshSubscriber {
+  resolve: (newToken: string) => void;
+  reject: (error: Error) => void;
+}
+let refreshSubscribers: RefreshSubscriber[] = [];
 
 function onRefreshed(newToken: string) {
-  refreshSubscribers.forEach((callback) => callback(newToken));
+  refreshSubscribers.forEach((sub) => sub.resolve(newToken));
   refreshSubscribers = [];
 }
 
-function addRefreshSubscriber(callback: (newToken: string) => void) {
-  refreshSubscribers.push(callback);
+function onRefreshFailed(error: Error) {
+  refreshSubscribers.forEach((sub) => sub.reject(error));
+  refreshSubscribers = [];
+}
+
+function addRefreshSubscriber(resolve: (token: string) => void, reject: (error: Error) => void) {
+  refreshSubscribers.push({ resolve, reject });
 }
 
 export async function apiRequest<T>(
@@ -191,27 +200,35 @@ export async function apiRequest<T>(
               localStorage.removeItem('refresh_token');
               localStorage.removeItem('auth_user');
             }
-            throw new Error('Your session has expired. Please sign in again.');
+            const sessionExpiryErr = new Error('Your session has expired. Please sign in again.');
+            onRefreshFailed(sessionExpiryErr);
+            throw sessionExpiryErr;
           }
         } catch (refreshErr) {
           isRefreshing = false;
+          onRefreshFailed(refreshErr instanceof Error ? refreshErr : new Error(String(refreshErr)));
           throw refreshErr;
         }
       } else {
         // Another request is already refreshing the token, wait for it
         return new Promise<T>((resolve, reject) => {
-          addRefreshSubscriber((newToken: string) => {
-            headers['Authorization'] = `Bearer ${newToken}`;
-            fetch(url, { ...options, headers })
-              .then(async (res) => {
-                if (res.status === 204) return {} as T;
-                const txt = await res.text();
-                if (!txt || txt.trim() === '') return {} as T;
-                return JSON.parse(txt) as T;
-              })
-              .then(resolve)
-              .catch(reject);
-          });
+          addRefreshSubscriber(
+            (newToken: string) => {
+              headers['Authorization'] = `Bearer ${newToken}`;
+              fetch(url, { ...options, headers })
+                .then(async (res) => {
+                  if (res.status === 204) return {} as T;
+                  const txt = await res.text();
+                  if (!txt || txt.trim() === '') return {} as T;
+                  return JSON.parse(txt) as T;
+                })
+                .then(resolve)
+                .catch(reject);
+            },
+            (err: Error) => {
+              reject(err);
+            }
+          );
         });
       }
     }
