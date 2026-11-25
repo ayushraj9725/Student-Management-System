@@ -25,7 +25,7 @@
         "x-next-revalidate-tag-token"
       ]
     },
-    "/students": {
+    "/admin": {
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -38,8 +38,8 @@
         }
       ],
       "initialRevalidateSeconds": false,
-      "srcRoute": "/students",
-      "dataRoute": "/students.rsc",
+      "srcRoute": "/admin",
+      "dataRoute": "/admin.rsc",
       "allowHeader": [
         "host",
         "x-matched-path",
@@ -74,7 +74,7 @@
         "x-next-revalidate-tag-token"
       ]
     },
-    "/admin": {
+    "/students": {
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -87,32 +87,8 @@
         }
       ],
       "initialRevalidateSeconds": false,
-      "srcRoute": "/admin",
-      "dataRoute": "/admin.rsc",
-      "allowHeader": [
-        "host",
-        "x-matched-path",
-        "x-prerender-revalidate",
-        "x-prerender-revalidate-if-generated",
-        "x-next-revalidated-tags",
-        "x-next-revalidate-tag-token"
-      ]
-    },
-    "/platform": {
-      "experimentalBypassFor": [
-        {
-          "type": "header",
-          "key": "next-action"
-        },
-        {
-          "type": "header",
-          "key": "content-type",
-          "value": "multipart/form-data;.*"
-        }
-      ],
-      "initialRevalidateSeconds": false,
-      "srcRoute": "/platform",
-      "dataRoute": "/platform.rsc",
+      "srcRoute": "/students",
+      "dataRoute": "/students.rsc",
       "allowHeader": [
         "host",
         "x-matched-path",
@@ -145,13 +121,37 @@
         "x-next-revalidated-tags",
         "x-next-revalidate-tag-token"
       ]
+    },
+    "/platform": {
+      "experimentalBypassFor": [
+        {
+          "type": "header",
+          "key": "next-action"
+        },
+        {
+          "type": "header",
+          "key": "content-type",
+          "value": "multipart/form-data;.*"
+        }
+      ],
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/platform",
+      "dataRoute": "/platform.rsc",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
     }
   },
   "dynamicRoutes": {},
   "notFoundRoutes": [],
   "preview": {
-    "previewModeId": "ab5b008acb4daa79c74644b912a548bd",
-    "previewModeSigningKey": "abeb83f260a3a2bbbc9ec7bb850010d9072467d79216b3547e80838e9dae60ff",
-    "previewModeEncryptionKey": "fda778bbf60c93b5bb0e0a31817561b0cf6cbe4bbe70990080f7cd9440467227"
+    "previewModeId": "d5f60f376b28ed463563e135465826a8",
+    "previewModeSigningKey": "2cf239b4ca0acf342724dca9a4dd509790b60b5ce7d172bc2ce97431c978ccaf",
+    "previewModeEncryptionKey": "42c01ef160d4e1da1e9a5bc4303140a51d1d85b33c5c943f34d53a883a67fe7f"
   }
 }

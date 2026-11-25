@@ -17,8 +17,23 @@ import {
   X,
   User as UserIcon,
   BarChart3,
-  Sparkles
+  Sparkles,
+  CalendarCheck,
+  Award,
+  CreditCard
 } from 'lucide-react';
+import { MASTER_NAVIGATION, filterNavigation } from '../../config/navigationConfig';
+
+const NAV_ICONS = {
+  BookOpen,
+  Users,
+  Sliders,
+  CalendarCheck,
+  Award,
+  CreditCard,
+  ShieldCheck,
+  BarChart3
+};
 import { authService } from '../../services/authService';
 import { platformService } from '../../services/platformService';
 import {
@@ -80,10 +95,14 @@ export default function AppShell({ children, currentTab, onTabChange }) {
     }
   };
 
-  // Determine active route/tab
-  const isPlatformActive = pathname === '/platform' || currentTab === 'platform';
-  const isIamActive = (pathname && pathname.includes('/admin')) || currentTab === 'iam';
-  const isStudentsActive = (!isPlatformActive && !isIamActive) || currentTab === 'students';
+  // Dynamic navigation filtered against user permissions, school toggles and platform entitlements
+  const filteredNavItems = filterNavigation(MASTER_NAVIGATION, currentUser, currentOrg?.slug);
+  const navByCategory = filteredNavItems.reduce((acc, item) => {
+    const cat = item.category || 'Workspace';
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(item);
+    return acc;
+  }, {});
 
   return (
     <div className="app-shell-layout">
@@ -128,53 +147,37 @@ export default function AppShell({ children, currentTab, onTabChange }) {
 
         {/* Sidebar Nav Links */}
         <div className="sidebar-nav-scroll">
-          {/* Main Navigation Group */}
-          <div>
-            <div className="sidebar-section-title">Main</div>
-            <div className="sidebar-nav-list">
-              <Link
-                href="/"
-                onClick={() => {
-                  if (onTabChange) onTabChange('students');
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`sidebar-nav-pill ${isStudentsActive ? 'active' : ''}`}
-              >
-                <BookOpen size={18} />
-                <span>Staff Workspace</span>
-              </Link>
+          {Object.entries(navByCategory).map(([category, items]) => (
+            <div key={category} style={{ marginBottom: '16px' }}>
+              <div className="sidebar-section-title">{category}</div>
+              <div className="sidebar-nav-list">
+                {items.map((item) => {
+                  const IconComp = NAV_ICONS[item.iconName] || BookOpen;
+                  const isActive = pathname === item.path || (item.path !== '/' && pathname && pathname.startsWith(item.path));
+                  return (
+                    <Link
+                      key={item.id}
+                      href={item.path}
+                      onClick={() => {
+                        if (onTabChange) onTabChange(item.id);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className={`sidebar-nav-pill ${isActive ? 'active' : ''}`}
+                    >
+                      <IconComp size={18} />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          ))}
 
-          {/* Governance & Control Group */}
-          <div>
-            <div className="sidebar-section-title">Governance & IAM</div>
-            <div className="sidebar-nav-list">
-              <Link
-                href={currentOrg?.slug ? `/${currentOrg.slug}/admin` : '/admin'}
-                onClick={() => {
-                  if (onTabChange) onTabChange('iam');
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`sidebar-nav-pill ${isIamActive ? 'active' : ''}`}
-              >
-                <Users size={18} />
-                <span>School Head Admin</span>
-              </Link>
-
-              <Link
-                href="/platform"
-                onClick={() => {
-                  if (onTabChange) onTabChange('platform');
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`sidebar-nav-pill ${isPlatformActive ? 'active' : ''}`}
-              >
-                <Sliders size={18} />
-                <span>Platform Control</span>
-              </Link>
+          {filteredNavItems.length === 0 && (
+            <div style={{ padding: '16px', color: '#94a3b8', fontSize: '0.82rem', textAlign: 'center' }}>
+              {currentUser ? 'No active applications authorized for this account.' : 'Please sign in to access workspace.'}
             </div>
-          </div>
+          )}
         </div>
 
         {/* Sidebar Bottom User & Logout Card */}

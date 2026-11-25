@@ -6,6 +6,10 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Organization entity representing a tenant school registered on the platform.
  */
@@ -38,6 +42,19 @@ public class Organization extends BaseEntity {
 
     @Column(name = "contact_email", nullable = false, length = 150)
     private String contactEmail;
+
+    @Builder.Default
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "organization_enabled_applications", joinColumns = @JoinColumn(name = "organization_id"))
+    @Column(name = "application_code", nullable = false, length = 60)
+    private Set<String> enabledApplications = new HashSet<>(Arrays.asList("STUDENT_MANAGEMENT", "IAM_GOVERNANCE", "ATTENDANCE"));
+
+    public Set<String> getEnabledApplicationCodes() {
+        if (enabledApplications == null || enabledApplications.isEmpty()) {
+            return new HashSet<>(Arrays.asList("STUDENT_MANAGEMENT", "IAM_GOVERNANCE", "ATTENDANCE"));
+        }
+        return enabledApplications;
+    }
 
     public Organization(String name, String slug, Long planId, OrganizationStatus status, String contactEmail) {
         this.name = name;

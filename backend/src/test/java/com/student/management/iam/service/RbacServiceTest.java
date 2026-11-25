@@ -79,7 +79,7 @@ class RbacServiceTest {
                 .build();
 
         when(organizationRepository.existsById(testOrgId)).thenReturn(true);
-        when(userRepository.findByEmailIgnoreCase("vikram@school.edu")).thenReturn(Optional.empty());
+        when(userRepository.existsByEmailIgnoreCase("vikram@school.edu")).thenReturn(false);
         when(userRepository.existsByUsername("vikram_b")).thenReturn(false);
         when(passwordEncoder.encode("Secr3t123!")).thenReturn("encoded_pass");
 
@@ -125,7 +125,7 @@ class RbacServiceTest {
                 .build();
 
         when(organizationRepository.existsById(testOrgId)).thenReturn(true);
-        when(userRepository.findByEmailIgnoreCase("ananya@school.edu")).thenReturn(Optional.empty());
+        when(userRepository.existsByEmailIgnoreCase("ananya@school.edu")).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("random_temp_encoded");
 
         User savedUser = User.builder()
@@ -167,15 +167,8 @@ class RbacServiceTest {
                 .password("Password123")
                 .build();
 
-        User existingUser = User.builder()
-                .id(103L)
-                .email("existing@school.edu")
-                .build();
-
         when(organizationRepository.existsById(testOrgId)).thenReturn(true);
-        when(userRepository.findByEmailIgnoreCase("existing@school.edu")).thenReturn(Optional.of(existingUser));
-        when(membershipRepository.findByUserIdAndOrganizationId(103L, testOrgId))
-                .thenReturn(Optional.of(Membership.builder().id(999L).build()));
+        when(userRepository.existsByEmailIgnoreCase("existing@school.edu")).thenReturn(true);
 
         assertThrows(DuplicateResourceException.class, () -> rbacService.provisionStaffUser(testOrgId, request));
     }

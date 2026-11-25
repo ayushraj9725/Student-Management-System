@@ -98,6 +98,7 @@ public class ApplicationEntitlementServiceImpl implements ApplicationEntitlement
 
         // 4. Resolve School Application Modules
         List<ApplicationEntitlementDto> applicationList = new ArrayList<>();
+        Set<String> schoolEnabledApps = (org != null) ? org.getEnabledApplicationCodes() : Collections.emptySet();
 
         for (ApplicationModule module : ApplicationModule.values()) {
             if (module == ApplicationModule.PLATFORM_CONTROL) {
@@ -105,9 +106,16 @@ public class ApplicationEntitlementServiceImpl implements ApplicationEntitlement
                 continue;
             }
 
+            // Tier 2 Gate: Is this application enabled for this specific school organization?
+            boolean isSchoolEnabled = schoolEnabledApps.contains(module.getCode());
+
+            // Tier 3 Gate: If enabled at school, does user have administrative or RBAC permission?
             boolean isAuthorized;
-            if (isSchoolAdmin) {
-                // School Admin / Principal has full visibility of institutional modules
+            if (!isSchoolEnabled) {
+                // If School Head disabled this module for their school, it is blocked for all staff
+                isAuthorized = false;
+            } else if (isSchoolAdmin) {
+                // School Admin / Principal has full visibility of institutional modules enabled by the school
                 isAuthorized = true;
             } else {
                 isAuthorized = checkModuleEntitlement(module, effectivePermissions, roleNames);
@@ -127,7 +135,7 @@ public class ApplicationEntitlementServiceImpl implements ApplicationEntitlement
                     .category(module.getCategory())
                     .iconColor(module.getIconColor())
                     .isAuthorized(isAuthorized)
-                    .isAvailable(module.isAvailable())
+                    .isAvailable(isSchoolEnabled)
                     .comingSoon(module.isComingSoon())
                     .requiredPermissions(module.getRequiredPermissions())
                     .build());
