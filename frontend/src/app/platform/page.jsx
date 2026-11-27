@@ -29,7 +29,9 @@ export default function PlatformAdminPage() {
   const handleLogout = async () => {
     await authService.logout();
     setCurrentUser(null);
-    router.push('/');
+    if (typeof window !== 'undefined' && window.location.port !== '4001') {
+      router.push('/');
+    }
   };
 
   if (!isHydrated) {

@@ -1,39 +1,40 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import HomeDashboard from '../components/home/HomeDashboard';
-import PlatformAdminPage from './platform/page';
 
 /**
- * Main Entry Route for My School Care.
- * Dynamically resolves portal scope based on runtime network port:
- * - Port 4001: Platform Administration Gateway (Platform Super Admin)
- * - Port 4000 (and default): Institutional School Portal (Tenant Admin / Staff)
+ * Main Home Launchpad Route for My School Care.
+ * Serves the central authorized application discovery dashboard for school workspaces.
+ * If accessed on platform administration port (4001), routes immediately to /platform.
  */
 export default function Page() {
-  const [isPlatformScope, setIsPlatformScope] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const is4001 = window.location.port === '4001';
-      setIsPlatformScope(is4001);
-      setIsMounted(true);
+    if (typeof window !== 'undefined' && window.location.port === '4001') {
+      setIsRedirecting(true);
+      window.location.replace('/platform');
     }
   }, []);
 
-  if (!isMounted) {
+  if (isRedirecting) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc' }}>
-        <div style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 500 }}>
-          Initializing portal gateway...
-        </div>
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#090d16',
+          color: '#94a3b8',
+          fontSize: '0.9rem',
+          fontFamily: 'Inter, system-ui, sans-serif'
+        }}
+      >
+        Directing to Platform Console...
       </div>
     );
-  }
-
-  if (isPlatformScope) {
-    return <PlatformAdminPage />;
   }
 
   return <HomeDashboard />;
