@@ -17,4 +17,14 @@ public class LoginRequest {
 
     @NotBlank(message = "Password is required")
     private String password;
+
+    /**
+     * Optional authorization gateway scope: "PLATFORM" or "TENANT"
+     */
+    private String authScope;
+
+    /**
+     * Optional target tenant slug for tenant portal pre-validation
+     */
+    private String targetOrgSlug;
 }

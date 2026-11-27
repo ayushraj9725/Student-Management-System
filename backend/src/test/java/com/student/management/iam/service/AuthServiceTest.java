@@ -4,6 +4,8 @@ import com.student.management.applications.dto.ApplicationEntitlementDto;
 import com.student.management.applications.dto.UserApplicationEntitlementResponse;
 import com.student.management.applications.service.ApplicationEntitlementService;
 import com.student.management.exception.BadRequestException;
+import com.student.management.exception.ForbiddenException;
+import com.student.management.iam.dto.request.LoginRequest;
 import com.student.management.iam.dto.request.RefreshTokenRequest;
 import com.student.management.iam.dto.response.AuthTokenResponse;
 import com.student.management.iam.repository.MembershipRepository;
@@ -180,5 +182,68 @@ class AuthServiceTest {
 
         // Verify all sessions for this user were immediately terminated
         verify(refreshTokenRepository, times(1)).deleteAllByUserId(100L);
+    }
+
+    @Test
+    @DisplayName("Scope Test: Regular user attempting login with authScope PLATFORM is rejected with 403 Forbidden")
+    void login_platformScope_regularUser_throwsForbiddenException() {
+        LoginRequest request = LoginRequest.builder()
+                .usernameOrEmail("testteacher")
+                .password("password123")
+                .authScope("PLATFORM")
+                .build();
+
+        when(userRepository.findByUsernameOrEmail("testteacher", "testteacher")).thenReturn(Optional.of(sampleUser));
+        when(passwordEncoder.matches("password123", sampleUser.getPassword())).thenReturn(true);
+
+        assertThatThrownBy(() -> authService.login(request))
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessageContaining("strictly reserved for Platform Super Administrators");
+
+        // Verify zero tokens were generated
+        verify(jwtTokenProvider, never()).generateAccessToken(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("Scope Test: SuperAdmin attempting login with authScope PLATFORM succeeds")
+    void login_platformScope_superAdmin_succeeds() {
+        User superAdminUser = User.builder()
+                .id(1L)
+                .username("superadmin")
+                .email("superadmin@platform.internal")
+                .fullName("Platform Super Admin")
+                .role("PLATFORM_SUPER_ADMIN")
+                .isSuperAdmin(true)
+                .password("encoded_pass")
+                .build();
+
+        LoginRequest request = LoginRequest.builder()
+                .usernameOrEmail("superadmin")
+                .password("supersecret")
+                .authScope("PLATFORM")
+                .build();
+
+        when(userRepository.findByUsernameOrEmail("superadmin", "superadmin")).thenReturn(Optional.of(superAdminUser));
+        when(passwordEncoder.matches("supersecret", "encoded_pass")).thenReturn(true);
+        when(jwtTokenProvider.generateAccessToken(anyLong(), anyString(), anyString(), anyString(), any(), any()))
+                .thenReturn("super-access-token");
+        when(jwtTokenProvider.generateSecureRandomToken()).thenReturn("super-refresh-token");
+        when(jwtTokenProvider.getRefreshTokenExpirationMs()).thenReturn(604800000L);
+        when(jwtTokenProvider.getAccessTokenExpirationMs()).thenReturn(900000L);
+
+        UserApplicationEntitlementResponse mockEntitlement = UserApplicationEntitlementResponse.builder()
+                .userId(1L)
+                .userRole("PLATFORM_SUPER_ADMIN")
+                .effectivePermissions(java.util.Set.of("PLATFORM_SUPER_ADMIN"))
+                .applications(Collections.emptyList())
+                .build();
+        when(applicationEntitlementService.getUserEntitlements(eq(1L), any())).thenReturn(mockEntitlement);
+
+        AuthTokenResponse response = authService.login(request);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getAccessToken()).isEqualTo("super-access-token");
+        assertThat(response.getIsSuperAdmin()).isTrue();
+        verify(refreshTokenRepository, times(1)).save(any(RefreshToken.class));
     }
 }

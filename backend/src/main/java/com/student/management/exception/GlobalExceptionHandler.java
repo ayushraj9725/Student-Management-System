@@ -54,6 +54,26 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<Map<String, Object>> handleForbidden(ForbiddenException ex) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("timestamp", ZonedDateTime.now());
+        error.put("status", HttpStatus.FORBIDDEN.value());
+        error.put("error", "Forbidden / Access Denied");
+        error.put("message", ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(org.springframework.security.access.AccessDeniedException ex) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("timestamp", ZonedDateTime.now());
+        error.put("status", HttpStatus.FORBIDDEN.value());
+        error.put("error", "Forbidden / Access Denied");
+        error.put("message", ex.getMessage() != null ? ex.getMessage() : "Access denied. You do not possess adequate permissions for this resource.");
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    }
+
     @ExceptionHandler(com.student.management.shared.exception.TenantSuspendedException.class)
     public ResponseEntity<Map<String, Object>> handleTenantSuspended(com.student.management.shared.exception.TenantSuspendedException ex) {
         Map<String, Object> error = new HashMap<>();

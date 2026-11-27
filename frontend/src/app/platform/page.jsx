@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import PlatformDashboard from '../../components/platform/PlatformDashboard';
-import AuthPage from '../../components/AuthPage';
+import PlatformAuthGateway from '../../components/platform/PlatformAuthGateway';
 import { authService } from '../../services/authService';
 import { ShieldAlert, ArrowLeft, LogOut } from 'lucide-react';
 
@@ -44,7 +44,7 @@ export default function PlatformAdminPage() {
 
   if (!currentUser) {
     return (
-      <AuthPage
+      <PlatformAuthGateway
         onLoginSuccess={(auth) => {
           setCurrentUser(auth);
           showToast(`Authenticated as ${auth.fullName || auth.username}`, 'success');

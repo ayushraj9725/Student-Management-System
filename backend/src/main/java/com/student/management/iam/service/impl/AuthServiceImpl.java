@@ -83,6 +83,19 @@ public class AuthServiceImpl implements AuthService {
             throw new BadRequestException("Invalid username or password.");
         }
 
+        // Scope Enforcement Guard: If request arrived at PLATFORM gateway, reject non-superadmins upfront
+        if ("PLATFORM".equalsIgnoreCase(request.getAuthScope())) {
+            boolean isSuper = Boolean.TRUE.equals(user.getIsSuperAdmin())
+                    || "PLATFORM_SUPER_ADMIN".equalsIgnoreCase(user.getRole())
+                    || "superadmin".equalsIgnoreCase(user.getUsername());
+            if (!isSuper) {
+                log.warn("SECURITY REJECTION: User '{}' with role '{}' attempted authentication via PLATFORM gateway",
+                        user.getUsername(), user.getRole());
+                throw new com.student.management.exception.ForbiddenException(
+                        "Access Denied: This gateway is strictly reserved for Platform Super Administrators. Please sign in at your institutional portal.");
+            }
+        }
+
         OrganizationContext orgCtx = resolveUserOrganization(user);
         Map<String, Object> extraClaims = new HashMap<>();
         if (orgCtx.id() != null) {

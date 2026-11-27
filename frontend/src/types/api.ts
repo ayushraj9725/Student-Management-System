@@ -137,6 +137,8 @@ export interface Student {
 export interface LoginRequest {
   usernameOrEmail: string;
   password: string;
+  authScope?: 'PLATFORM' | 'TENANT';
+  targetOrgSlug?: string;
 }
 
 export interface AuthTokenResponse {

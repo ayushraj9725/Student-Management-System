@@ -4,9 +4,11 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "next dev -p 4000",
+    "dev:platform": "next dev -p 4001",
     "clean": "node -e \"try { require('fs').rmSync('.next', { recursive: true, force: true }); } catch (e) {}\"",
     "build": "next build",
-    "start": "next start -p 4000"
+    "start": "next start -p 4000",
+    "start:platform": "next start -p 4001"
   },
   "dependencies": {
     "lucide-react": "^1.61.0",
