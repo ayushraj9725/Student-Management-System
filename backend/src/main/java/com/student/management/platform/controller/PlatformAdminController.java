@@ -69,4 +69,20 @@ public class PlatformAdminController {
         log.debug("REST request to get analytics for organization ID: {}", id);
         return ResponseEntity.ok(platformService.getTenantAnalytics(id));
     }
+
+    @PutMapping("/organizations/{id}/applications")
+    @PreAuthorize("hasRole('PLATFORM_SUPER_ADMIN')")
+    public ResponseEntity<OrganizationResponse> updateOrganizationApplications(
+            @PathVariable Long id,
+            @Valid @RequestBody com.student.management.platform.dto.request.UpdateOrganizationApplicationsRequest request) {
+        log.info("REST request to update applications for organization ID: {}", id);
+        return ResponseEntity.ok(platformService.updateOrganizationApplications(id, request));
+    }
+
+    @GetMapping("/applications/catalog")
+    @PreAuthorize("hasRole('PLATFORM_SUPER_ADMIN')")
+    public ResponseEntity<List<com.student.management.platform.dto.response.ApplicationModuleCatalogDto>> getApplicationCatalog() {
+        log.debug("REST request to get platform application catalog");
+        return ResponseEntity.ok(platformService.getApplicationCatalog());
+    }
 }

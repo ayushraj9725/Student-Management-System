@@ -101,6 +101,9 @@ public class PlatformServiceImpl implements PlatformService {
 
         Organization entity = organizationMapper.toEntity(request);
         entity.setSlug(request.getSlug().toLowerCase().trim());
+        if (request.getEnabledApplications() != null && !request.getEnabledApplications().isEmpty()) {
+            entity.setEnabledApplications(new java.util.HashSet<>(request.getEnabledApplications()));
+        }
         Organization saved = organizationRepository.save(entity);
 
         // Provision School Head User, assign SCHOOL_ADMIN membership, and dispatch onboarding OTP
@@ -222,6 +225,42 @@ public class PlatformServiceImpl implements PlatformService {
                 .totalStaffMembers(staffCount)
                 .maxStaffQuota(plan.getMaxStaff())
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public OrganizationResponse updateOrganizationApplications(Long id, com.student.management.platform.dto.request.UpdateOrganizationApplicationsRequest request) {
+        log.info("Updating enabled applications for organization ID {} to {}", id, request.getEnabledApplications());
+        Organization org = organizationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Organization with ID " + id + " not found."));
+
+        org.setEnabledApplications(new java.util.HashSet<>(request.getEnabledApplications()));
+        Organization updated = organizationRepository.save(org);
+
+        String planName = subscriptionPlanRepository.findById(updated.getPlanId())
+                .map(SubscriptionPlan::getName)
+                .orElse("UNKNOWN");
+
+        return organizationMapper.toResponse(updated, planName);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<com.student.management.platform.dto.response.ApplicationModuleCatalogDto> getApplicationCatalog() {
+        return java.util.Arrays.stream(com.student.management.applications.registry.ApplicationModule.values())
+                .filter(m -> m != com.student.management.applications.registry.ApplicationModule.PLATFORM_CONTROL)
+                .map(m -> com.student.management.platform.dto.response.ApplicationModuleCatalogDto.builder()
+                        .id(m.getId())
+                        .code(m.getCode())
+                        .title(m.getTitle())
+                        .description(m.getDescription())
+                        .route(m.getRoute())
+                        .category(m.getCategory())
+                        .iconColor(m.getIconColor())
+                        .comingSoon(m.isComingSoon())
+                        .requiredPermissions(m.getRequiredPermissions())
+                        .build())
+                .collect(Collectors.toList());
     }
 
     @Override

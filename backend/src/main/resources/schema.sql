@@ -222,3 +222,11 @@ ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TI
 ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS created_by UUID NULL;
 ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS updated_by UUID NULL;
 
+
+-- Migration: Organization enabled applications catalog mapping
+CREATE TABLE IF NOT EXISTS organization_enabled_applications (
+    organization_id BIGINT NOT NULL,
+    application_code VARCHAR(60) NOT NULL,
+    PRIMARY KEY (organization_id, application_code),
+    CONSTRAINT fk_org_enabled_apps FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+);

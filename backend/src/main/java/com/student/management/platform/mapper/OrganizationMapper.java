@@ -19,5 +19,6 @@ public interface OrganizationMapper {
     Organization toEntity(CreateOrganizationRequest request);
 
     @Mapping(target = "planName", source = "planName")
+    @Mapping(target = "enabledApplications", expression = "java(organization.getEnabledApplicationCodes())")
     OrganizationResponse toResponse(Organization organization, String planName);
 }

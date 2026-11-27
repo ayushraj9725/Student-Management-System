@@ -22,6 +22,7 @@ public class OrganizationResponse {
     private OrganizationStatus status;
     private String contactEmail;
     private String activationOtp;
+    private java.util.Set<String> enabledApplications;
     private ZonedDateTime createdAt;
     private ZonedDateTime updatedAt;
     private UUID createdBy;

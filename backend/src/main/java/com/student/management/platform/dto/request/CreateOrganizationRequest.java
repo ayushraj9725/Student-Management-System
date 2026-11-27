@@ -34,4 +34,6 @@ public class CreateOrganizationRequest {
 
     @Email(message = "School head email must be valid")
     private String headEmail;
+
+    private java.util.Set<String> enabledApplications;
 }

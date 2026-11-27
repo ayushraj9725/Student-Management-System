@@ -25,5 +25,9 @@ public interface PlatformService {
 
     TenantAnalyticsResponse getTenantAnalytics(Long orgId);
 
+    OrganizationResponse updateOrganizationApplications(Long id, com.student.management.platform.dto.request.UpdateOrganizationApplicationsRequest request);
+
+    List<com.student.management.platform.dto.response.ApplicationModuleCatalogDto> getApplicationCatalog();
+
     void validateStudentCapacity(Long orgId);
 }

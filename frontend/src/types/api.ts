@@ -22,8 +22,21 @@ export interface OrganizationResponse {
   status: OrganizationStatus;
   contactEmail: string;
   activationOtp?: string;
+  enabledApplications?: string[];
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface ApplicationModuleCatalogDto {
+  id: string;
+  code: string;
+  title: string;
+  description: string;
+  route?: string;
+  category: string;
+  iconColor: string;
+  comingSoon: boolean;
+  requiredPermissions: string[];
 }
 
 export interface CreateOrganizationRequest {

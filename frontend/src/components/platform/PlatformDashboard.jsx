@@ -19,6 +19,8 @@ import {
   KeyRound,
   Clock,
   ShieldCheck,
+  Sliders,
+  Layers,
 } from 'lucide-react';
 import { platformService } from '../../services/platformService';
 import { clearTenantContext } from '../../services/apiClient';
@@ -47,6 +49,13 @@ export default function PlatformDashboard({ showToast }) {
   // Analytics Modal
   const [selectedAnalytics, setSelectedAnalytics] = useState(null);
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
+
+  // Application Entitlements Feature Flag State
+  const [appCatalog, setAppCatalog] = useState([]);
+  const [isAppModalOpen, setIsAppModalOpen] = useState(false);
+  const [selectedOrgForApps, setSelectedOrgForApps] = useState(null);
+  const [activeAppCodes, setActiveAppCodes] = useState(new Set());
+  const [isSavingApps, setIsSavingApps] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -148,6 +157,60 @@ export default function PlatformDashboard({ showToast }) {
     }
   };
 
+  // Manage Tenant Application Entitlements
+  const handleOpenAppManagement = async (org) => {
+    setSelectedOrgForApps(org);
+    const initialApps = new Set(
+      Array.isArray(org.enabledApplications) && org.enabledApplications.length > 0
+        ? org.enabledApplications
+        : ['STUDENT_MANAGEMENT', 'IAM_GOVERNANCE', 'ATTENDANCE']
+    );
+    setActiveAppCodes(initialApps);
+    setIsAppModalOpen(true);
+
+    if (appCatalog.length === 0) {
+      try {
+        const catalog = await platformService.getApplicationCatalog();
+        setAppCatalog(Array.isArray(catalog) ? catalog : []);
+      } catch (err) {
+        showToast?.('Could not load application catalog: ' + err.message, 'error');
+      }
+    }
+  };
+
+  const handleToggleAppCode = (code) => {
+    setActiveAppCodes((prev) => {
+      const next = new Set(prev);
+      if (next.has(code)) {
+        next.delete(code);
+      } else {
+        next.add(code);
+      }
+      return next;
+    });
+  };
+
+  const handleSaveApplications = async () => {
+    if (!selectedOrgForApps) return;
+    setIsSavingApps(true);
+    try {
+      const appArray = Array.from(activeAppCodes);
+      const updated = await platformService.updateOrganizationApplications(
+        selectedOrgForApps.id,
+        appArray
+      );
+      showToast?.(`Application entitlements updated for ${selectedOrgForApps.name}!`, 'success');
+      setOrganizations((prev) =>
+        prev.map((o) => (o.id === updated.id ? { ...o, enabledApplications: appArray } : o))
+      );
+      setIsAppModalOpen(false);
+    } catch (err) {
+      showToast?.(err.message || 'Failed to update application entitlements.', 'error');
+    } finally {
+      setIsSavingApps(false);
+    }
+  };
+
   // Compute platform metrics
   const totalOrgs = organizations.length;
   const activeOrgs = organizations.filter((o) => o.status === 'ACTIVE').length;
@@ -230,6 +293,7 @@ export default function PlatformDashboard({ showToast }) {
                 <th style={{ padding: '12px 20px', fontWeight: 600 }}>Slug</th>
                 <th style={{ padding: '12px 20px', fontWeight: 600 }}>Plan</th>
                 <th style={{ padding: '12px 20px', fontWeight: 600 }}>Contact Email</th>
+                <th style={{ padding: '12px 20px', fontWeight: 600 }}>Entitled Applications</th>
                 <th style={{ padding: '12px 20px', fontWeight: 600 }}>Status</th>
                 <th style={{ padding: '12px 20px', fontWeight: 600, textAlign: 'right' }}>Actions</th>
               </tr>
@@ -237,7 +301,7 @@ export default function PlatformDashboard({ showToast }) {
             <tbody>
               {organizations.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <td colSpan={8} style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
                     No registered school organizations found.
                   </td>
                 </tr>
@@ -259,10 +323,44 @@ export default function PlatformDashboard({ showToast }) {
                     </td>
                     <td style={{ padding: '14px 20px', color: 'var(--text-medium)' }}>{org.contactEmail}</td>
                     <td style={{ padding: '14px 20px' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenAppManagement(org)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          padding: '4px 10px',
+                          borderRadius: '20px',
+                          backgroundColor: '#eff6ff',
+                          border: '1px solid #bfdbfe',
+                          color: '#1d4ed8',
+                          fontSize: '0.78rem',
+                          fontWeight: 600,
+                          cursor: 'pointer'
+                        }}
+                        title="Click to configure applications for this school"
+                      >
+                        <Sliders size={12} color="#2563eb" />
+                        <span>{(org.enabledApplications || ['STUDENT_MANAGEMENT', 'IAM_GOVERNANCE', 'ATTENDANCE']).length} Active</span>
+                      </button>
+                    </td>
+                    <td style={{ padding: '14px 20px' }}>
                       <StatusBadge status={org.status} />
                     </td>
                     <td style={{ padding: '14px 20px', textAlign: 'right' }}>
                       <div style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          className="btn-executive-secondary"
+                          style={{ padding: '6px 10px', fontSize: '0.78rem' }}
+                          onClick={() => handleOpenAppManagement(org)}
+                          title="Configure Application Entitlements"
+                        >
+                          <Sliders size={14} />
+                          <span>Apps</span>
+                        </button>
+
                         <button
                           type="button"
                           className="btn-executive-secondary"
@@ -704,6 +802,182 @@ export default function PlatformDashboard({ showToast }) {
               <div style={{ marginTop: 6 }}>
                 <StatusBadge status={selectedAnalytics.status} />
               </div>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Application Entitlements Feature Flag Modal */}
+      {selectedOrgForApps && (
+        <Modal
+          isOpen={isAppModalOpen}
+          onClose={() => setIsAppModalOpen(false)}
+          title={`Application Entitlements: ${selectedOrgForApps.name}`}
+          subtitle={`Control which software applications and operational modules are provisioned for ${selectedOrgForApps.slug}.`}
+          maxWidth="max-w-2xl"
+          footer={
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', width: '100%' }}>
+              <button
+                type="button"
+                className="btn-executive-secondary"
+                onClick={() => setIsAppModalOpen(false)}
+                disabled={isSavingApps}
+                style={{ padding: '8px 16px', borderRadius: 8 }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-executive-primary"
+                onClick={handleSaveApplications}
+                disabled={isSavingApps}
+                style={{ padding: '8px 20px', borderRadius: 8 }}
+              >
+                {isSavingApps ? 'Saving Entitlements...' : 'Save Entitlements'}
+              </button>
+            </div>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Context Info Banner */}
+            <div
+              style={{
+                backgroundColor: '#eff6ff',
+                border: '1px solid #bfdbfe',
+                borderRadius: 8,
+                padding: '12px 16px',
+                fontSize: '0.82rem',
+                color: '#1e40af',
+                lineHeight: 1.45
+              }}
+            >
+              <strong>Platform Feature Flag Policy:</strong> Enabling or disabling an application instantly controls visibility and access across all user sessions and RBAC rules inside <strong>{selectedOrgForApps.name}</strong>.
+            </div>
+
+            {/* Applications List */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: '420px', overflowY: 'auto', paddingRight: 4 }}>
+              {(appCatalog.length > 0 ? appCatalog : [
+                {
+                  code: 'STUDENT_MANAGEMENT',
+                  title: 'Staff & Student Records',
+                  description: 'Enrolled student records, course directories, and academic curriculum management.',
+                  category: 'Academics',
+                  iconColor: '#4f46e5'
+                },
+                {
+                  code: 'IAM_GOVERNANCE',
+                  title: 'Identity & Access (IAM)',
+                  description: 'Manage institutional roles, permissions, staff groups, and access security.',
+                  category: 'Governance',
+                  iconColor: '#059669'
+                },
+                {
+                  code: 'ATTENDANCE',
+                  title: 'Attendance Management',
+                  description: 'Daily roll call, staff biometric tracking, and student attendance logs.',
+                  category: 'Operations',
+                  iconColor: '#9333ea'
+                },
+                {
+                  code: 'EXAMINATION',
+                  title: 'Examination & Results',
+                  description: 'Exam schedules, term grade books, marks moderation, and report cards.',
+                  category: 'Academics',
+                  iconColor: '#ea580c'
+                },
+                {
+                  code: 'FINANCE',
+                  title: 'Fee & Finance Management',
+                  description: 'Tuition fees, concession rules, payment tracking, and accounting ledgers.',
+                  category: 'Finance',
+                  iconColor: '#0d9488'
+                }
+              ]).map((app) => {
+                const isEnabled = activeAppCodes.has(app.code);
+                return (
+                  <div
+                    key={app.code}
+                    onClick={() => handleToggleAppCode(app.code)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '14px 16px',
+                      borderRadius: 10,
+                      border: isEnabled ? '1.5px solid #3b82f6' : '1px solid #e2e8f0',
+                      backgroundColor: isEnabled ? '#f8faff' : '#ffffff',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                      <div
+                        style={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: 8,
+                          backgroundColor: `${app.iconColor || '#3b82f6'}15`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}
+                      >
+                        <Layers size={20} color={app.iconColor || '#3b82f6'} />
+                      </div>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontWeight: 600, color: '#0f172a', fontSize: '0.88rem' }}>
+                            {app.title}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: '0.68rem',
+                              padding: '2px 8px',
+                              borderRadius: 4,
+                              backgroundColor: '#f1f5f9',
+                              color: '#475569',
+                              fontWeight: 500
+                            }}
+                          >
+                            {app.category}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: 2 }}>
+                          {app.description}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ marginLeft: 16, flexShrink: 0 }}>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleAppCode(app.code);
+                        }}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          padding: '6px 12px',
+                          borderRadius: 20,
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          border: 'none',
+                          cursor: 'pointer',
+                          backgroundColor: isEnabled ? '#dcfce7' : '#f1f5f9',
+                          color: isEnabled ? '#15803d' : '#64748b',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        {isEnabled ? <ToggleRight size={16} color="#16a34a" /> : <ToggleLeft size={16} color="#94a3b8" />}
+                        <span>{isEnabled ? 'Enabled' : 'Disabled'}</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </Modal>

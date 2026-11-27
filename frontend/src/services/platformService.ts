@@ -5,6 +5,7 @@ import {
   CreateOrganizationRequest,
   UpdateOrganizationStatusRequest,
   TenantAnalyticsResponse,
+  ApplicationModuleCatalogDto,
 } from '../types/api';
 
 /**
@@ -61,5 +62,25 @@ export const platformService = {
    */
   async getTenantAnalytics(id: number): Promise<TenantAnalyticsResponse> {
     return apiRequest<TenantAnalyticsResponse>(`/platform/organizations/${id}/analytics`);
+  },
+
+  /**
+   * Fetch master platform catalog of operable applications.
+   */
+  async getApplicationCatalog(): Promise<ApplicationModuleCatalogDto[]> {
+    return apiRequest<ApplicationModuleCatalogDto[]>('/platform/applications/catalog');
+  },
+
+  /**
+   * Update the set of enabled applications for a specific tenant organization.
+   */
+  async updateOrganizationApplications(
+    id: number,
+    enabledApplications: string[]
+  ): Promise<OrganizationResponse> {
+    return apiRequest<OrganizationResponse>(`/platform/organizations/${id}/applications`, {
+      method: 'PUT',
+      body: JSON.stringify({ enabledApplications }),
+    });
   },
 };
