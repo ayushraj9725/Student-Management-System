@@ -1,9 +1,0 @@
-{
-  "/_not-found/page": "/_not-found",
-  "/[slug]/admin/page": "/[slug]/admin",
-  "/page": "/",
-  "/students/page": "/students",
-  "/platform/page": "/platform",
-  "/admin/page": "/admin",
-  "/setup-password/page": "/setup-password"
-}

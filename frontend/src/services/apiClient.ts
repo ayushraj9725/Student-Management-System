@@ -249,6 +249,20 @@ export async function apiRequest<T>(
     } catch {
       // If reading fails, use default statusText
     }
+
+    // Sanitize any raw database or SQL leak before exposing to UI
+    const lower = errorMessage.toLowerCase();
+    if (
+      lower.includes('could not execute statement') ||
+      lower.includes('relation') ||
+      lower.includes('syntax error') ||
+      (lower.includes('column') && lower.includes('does not exist')) ||
+      lower.includes('sql [') ||
+      lower.includes('hibernate')
+    ) {
+      errorMessage = 'Database schema synchronization required. Please restart backend application to apply migrations.';
+    }
+
     throw new Error(errorMessage);
   }
 

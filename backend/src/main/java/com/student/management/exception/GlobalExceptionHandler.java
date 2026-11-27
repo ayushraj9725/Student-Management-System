@@ -1,5 +1,7 @@
 package com.student.management.exception;
 
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -11,6 +13,7 @@ import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -101,13 +104,32 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<Map<String, Object>> handleDatabaseException(DataAccessException ex) {
+        log.error("Database operation failed: {}", ex.getMessage(), ex);
+        Map<String, Object> error = new HashMap<>();
+        error.put("timestamp", ZonedDateTime.now());
+        error.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+        error.put("error", "Database Error");
+        error.put("message", "A database persistence error occurred. Please restart the backend service or try again in a moment.");
+        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneralException(Exception ex) {
+        log.error("Unhandled internal server exception: {}", ex.getMessage(), ex);
         Map<String, Object> error = new HashMap<>();
         error.put("timestamp", ZonedDateTime.now());
         error.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
         error.put("error", "Internal Server Error");
-        error.put("message", ex.getMessage() != null ? ex.getMessage() : "An unexpected error occurred.");
+        // Sanitize raw SQL/internal exception leaks to end-users
+        String safeMessage = ex.getMessage();
+        if (safeMessage != null && (safeMessage.contains("could not execute statement") || safeMessage.contains("relation") || safeMessage.contains("SQL ["))) {
+            safeMessage = "Database synchronization in progress. Please restart the backend service or try again in a moment.";
+        } else if (safeMessage == null || safeMessage.isBlank()) {
+            safeMessage = "An unexpected internal error occurred. Please try again shortly.";
+        }
+        error.put("message", safeMessage);
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
