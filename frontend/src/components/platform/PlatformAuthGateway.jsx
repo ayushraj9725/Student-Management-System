@@ -2,19 +2,15 @@
 
 import React, { useState } from 'react';
 import {
-  ShieldAlert,
-  ShieldCheck,
   Lock,
   User,
   ArrowRight,
-  AlertTriangle,
-  Server,
-  ExternalLink
+  AlertTriangle
 } from 'lucide-react';
 import { authService } from '../../services/authService';
 
 /**
- * Dedicated, hardened login gateway for Platform Super Administrators.
+ * Dedicated login gateway for Platform Super Administrators.
  * Enforces "PLATFORM" authScope to prevent institutional staff credential reuse.
  */
 export default function PlatformAuthGateway({ onLoginSuccess }) {
@@ -26,7 +22,7 @@ export default function PlatformAuthGateway({ onLoginSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!usernameOrEmail.trim() || !password) {
-      setErrorMessage('Please provide both administrative identifier and master credentials.');
+      setErrorMessage('Please enter both username and password.');
       return;
     }
 
@@ -49,7 +45,7 @@ export default function PlatformAuthGateway({ onLoginSuccess }) {
 
       if (!isSuper) {
         await authService.logout();
-        setErrorMessage('Access Denied: This account is not authorized for Platform Super Administrator operations.');
+        setErrorMessage('Access Denied: This account is not authorized for Platform Administration.');
         return;
       }
 
@@ -81,8 +77,8 @@ export default function PlatformAuthGateway({ onLoginSuccess }) {
       <div
         style={{
           width: '100%',
-          maxWidth: '440px',
-          background: 'rgba(15, 23, 42, 0.75)',
+          maxWidth: '420px',
+          background: 'rgba(15, 23, 42, 0.85)',
           backdropFilter: 'blur(16px)',
           border: '1px solid rgba(56, 189, 248, 0.2)',
           borderRadius: '16px',
@@ -90,29 +86,6 @@ export default function PlatformAuthGateway({ onLoginSuccess }) {
           padding: '36px 32px'
         }}
       >
-        {/* Security Badge */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: 'rgba(14, 165, 233, 0.12)',
-              border: '1px solid rgba(56, 189, 248, 0.3)',
-              borderRadius: '9999px',
-              padding: '6px 14px',
-              fontSize: '11px',
-              fontWeight: 600,
-              color: '#38bdf8',
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase'
-            }}
-          >
-            <ShieldCheck size={14} color="#38bdf8" />
-            Isolated Operations Perimeter
-          </div>
-        </div>
-
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <h1
@@ -127,7 +100,7 @@ export default function PlatformAuthGateway({ onLoginSuccess }) {
             My School Care
           </h1>
           <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>
-            Platform Operations & Governance Gateway
+            Platform Administration
           </p>
         </div>
 
@@ -164,7 +137,7 @@ export default function PlatformAuthGateway({ onLoginSuccess }) {
                 marginBottom: '6px'
               }}
             >
-              Master Administrator Identifier
+              Username or Email Address
             </label>
             <div style={{ position: 'relative' }}>
               <User
@@ -176,7 +149,7 @@ export default function PlatformAuthGateway({ onLoginSuccess }) {
                 type="text"
                 value={usernameOrEmail}
                 onChange={(e) => setUsernameOrEmail(e.target.value)}
-                placeholder="superadmin or ops@myschoolcare.internal"
+                placeholder="Enter username or email"
                 autoComplete="username"
                 style={{
                   width: '100%',
@@ -204,7 +177,7 @@ export default function PlatformAuthGateway({ onLoginSuccess }) {
                 marginBottom: '6px'
               }}
             >
-              Master Password
+              Password
             </label>
             <div style={{ position: 'relative' }}>
               <Lock
@@ -256,39 +229,10 @@ export default function PlatformAuthGateway({ onLoginSuccess }) {
               transition: 'opacity 0.2s ease, transform 0.1s ease'
             }}
           >
-            {isLoading ? 'Verifying Scope & Credentials...' : 'Authenticate to Platform Console'}
+            {isLoading ? 'Signing In...' : 'Sign In'}
             {!isLoading && <ArrowRight size={15} />}
           </button>
         </form>
-
-        {/* Footer Isolation Notice */}
-        <div
-          style={{
-            marginTop: '28px',
-            paddingTop: '20px',
-            borderTop: '1px solid rgba(100, 116, 139, 0.2)',
-            textAlign: 'center'
-          }}
-        >
-          <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '10px' }}>
-            Looking for an Institutional School Workspace?
-          </div>
-          <a
-            href="http://localhost:4000"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '12px',
-              color: '#38bdf8',
-              textDecoration: 'none',
-              fontWeight: 500
-            }}
-          >
-            Connect to School Portal (Port 4000)
-            <ExternalLink size={12} />
-          </a>
-        </div>
       </div>
     </div>
   );
