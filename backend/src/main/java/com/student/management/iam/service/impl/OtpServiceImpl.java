@@ -3,15 +3,11 @@ package com.student.management.iam.service.impl;
 import com.student.management.exception.BadRequestException;
 import com.student.management.iam.security.entity.OtpVerification;
 import com.student.management.iam.security.repository.OtpVerificationRepository;
+import com.student.management.iam.service.EmailNotificationService;
 import com.student.management.iam.service.OtpService;
-import jakarta.mail.internet.InternetAddress;
-import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +16,7 @@ import java.time.ZonedDateTime;
 
 /**
  * Concrete implementation for OTP generation, rate limiting, and email dispatch.
+ * Decoupled from SMTP I/O through EmailNotificationService.
  */
 @Slf4j
 @Service
@@ -27,16 +24,8 @@ import java.time.ZonedDateTime;
 public class OtpServiceImpl implements OtpService {
 
     private final OtpVerificationRepository otpVerificationRepository;
+    private final EmailNotificationService emailNotificationService;
     private final SecureRandom secureRandom = new SecureRandom();
-
-    @Autowired(required = false)
-    private JavaMailSender mailSender;
-
-    @Value("${spring.mail.username:ayushrajtech01@gmail.com}")
-    private String mailUsername;
-
-    @Value("${app.mail.from-name:My School Care}")
-    private String mailFromName;
 
     @Value("${app.mail.reply-to:noreply@myschoolcare.com}")
     private String mailReplyTo;
@@ -133,36 +122,8 @@ public class OtpServiceImpl implements OtpService {
 
         String htmlContent = buildHtmlEmail(toEmail, code, isOnboarding, setupUrl);
 
-        if (mailSender != null) {
-            try {
-                MimeMessage mimeMessage = mailSender.createMimeMessage();
-                MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
-
-                helper.setTo(toEmail);
-                helper.setSubject(subject);
-                helper.setFrom(new InternetAddress(mailUsername, mailFromName));
-                helper.setReplyTo(new InternetAddress(mailReplyTo, mailFromName + " No-Reply"));
-                helper.setText(plainText, htmlContent);
-
-                mailSender.send(mimeMessage);
-                log.info("Dispatched live SMTP email to: {} from: '{} <{}>' (Reply-To: '{}')",
-                        toEmail, mailFromName, mailUsername, mailReplyTo);
-                return;
-            } catch (Exception ex) {
-                log.warn("Live SMTP dispatch failed: {}. Falling back to dev simulation.", ex.getMessage());
-            }
-        }
-
-        // Local development / testing simulation fallback
-        log.info("==================================================");
-        log.info("[MY SCHOOL CARE DEV EMAIL / OTP DISPATCH]");
-        log.info("TO: {}", toEmail);
-        log.info("SUBJECT: {}", subject);
-        log.info("CODE: {}", code);
-        log.info("PURPOSE: {}", purpose);
-        log.info("FROM: {} <{}>", mailFromName, mailUsername);
-        log.info("REPLY-TO: {}", mailReplyTo);
-        log.info("==================================================");
+        // Gap 5 Fix: Non-blocking asynchronous email dispatch decoupled from DB transaction
+        emailNotificationService.sendEmailAsync(toEmail, subject, plainText, htmlContent);
     }
 
     private String buildHtmlEmail(String toEmail, String code, boolean isOnboarding, String setupUrl) {

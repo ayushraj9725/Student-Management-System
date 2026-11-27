@@ -32,7 +32,24 @@ public class RefreshToken extends BaseEntity {
     @Column(name = "expires_at", nullable = false)
     private ZonedDateTime expiresAt;
 
+    @Builder.Default
+    @Column(name = "is_revoked", nullable = false)
+    private boolean isRevoked = false;
+
+    @Column(name = "revoked_at")
+    private ZonedDateTime revokedAt;
+
+    @Column(name = "replaced_by_token", length = 255)
+    private String replacedByToken;
+
     public boolean isExpired() {
         return expiresAt.isBefore(ZonedDateTime.now());
+    }
+
+    public boolean isWithinGracePeriod(long gracePeriodSeconds) {
+        if (!isRevoked || revokedAt == null) {
+            return false;
+        }
+        return revokedAt.plusSeconds(gracePeriodSeconds).isAfter(ZonedDateTime.now());
     }
 }

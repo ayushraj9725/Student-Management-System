@@ -167,6 +167,18 @@ export const authService = {
   },
 
   /**
+   * Partially update active authenticated user metadata in local storage.
+   */
+  updateCurrentUser(partialUser: Partial<AuthTokenResponse>): AuthTokenResponse | null {
+    if (typeof window === 'undefined') return null;
+    const current = this.getCurrentUser();
+    if (!current) return null;
+    const updated = { ...current, ...partialUser };
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updated));
+    return updated;
+  },
+
+  /**
    * Check if a user session is active.
    */
   isAuthenticated(): boolean {

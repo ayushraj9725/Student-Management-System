@@ -152,6 +152,57 @@ public class AuthServiceImpl implements AuthService {
             throw new BadRequestException("Refresh token has expired. Please login again.");
         }
 
+        // Gap 1 Fix: Multi-tab race condition grace window & token reuse detection
+        if (storedToken.isRevoked()) {
+            if (storedToken.isWithinGracePeriod(30) && storedToken.getReplacedByToken() != null) {
+                log.warn("Concurrent refresh token reuse within 30s grace window for userId={}. Reissuing access token for replaced token.", storedToken.getUserId());
+                User user = userRepository.findById(storedToken.getUserId())
+                        .orElseThrow(() -> new ResourceNotFoundException("User associated with refresh token not found."));
+
+                OrganizationContext orgCtx = resolveUserOrganization(user);
+                Map<String, Object> extraClaims = new HashMap<>();
+                if (orgCtx.id() != null) extraClaims.put("org_id", orgCtx.id());
+                if (orgCtx.slug() != null) extraClaims.put("org_slug", orgCtx.slug());
+
+                String newAccessToken = jwtTokenProvider.generateAccessToken(
+                        user.getId(),
+                        user.getUsername(),
+                        user.getEmail(),
+                        user.getRole(),
+                        user.getIsSuperAdmin(),
+                        extraClaims
+                );
+
+                var entitlement = applicationEntitlementService.getUserEntitlements(user.getId(), orgCtx.id());
+                java.util.List<String> authorizedApps = entitlement.getApplications().stream()
+                        .filter(a -> Boolean.TRUE.equals(a.getIsAuthorized()))
+                        .map(com.student.management.applications.dto.ApplicationEntitlementDto::getCode)
+                        .collect(java.util.stream.Collectors.toList());
+
+                return AuthTokenResponse.builder()
+                        .accessToken(newAccessToken)
+                        .refreshToken(storedToken.getReplacedByToken())
+                        .tokenType("Bearer")
+                        .expiresInMs(jwtTokenProvider.getAccessTokenExpirationMs())
+                        .userId(user.getId())
+                        .username(user.getUsername())
+                        .email(user.getEmail())
+                        .fullName(user.getFullName())
+                        .role(user.getRole())
+                        .isSuperAdmin(user.getIsSuperAdmin())
+                        .organizationId(orgCtx.id())
+                        .organizationSlug(orgCtx.slug())
+                        .organizationName(orgCtx.name())
+                        .authorizedApplications(authorizedApps)
+                        .permissions(entitlement.getEffectivePermissions())
+                        .build();
+            } else {
+                log.error("SECURITY ALERT: Compromised or expired-grace refresh token reuse detected for userId={}. Revoking all active sessions.", storedToken.getUserId());
+                refreshTokenRepository.deleteAllByUserId(storedToken.getUserId());
+                throw new BadRequestException("Suspicious token reuse detected. All active sessions have been revoked for your security. Please log in again.");
+            }
+        }
+
         User user = userRepository.findById(storedToken.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User associated with refresh token not found."));
 
@@ -173,18 +224,22 @@ public class AuthServiceImpl implements AuthService {
                 extraClaims
         );
 
-        // 1. Delete the old refresh token (Token Rotation)
-        refreshTokenRepository.delete(storedToken);
-
-        // 2. Issue a brand new Refresh Token
+        // 1. Issue a brand new Refresh Token
         String newRefreshTokenRaw = jwtTokenProvider.generateSecureRandomToken();
         ZonedDateTime refreshExpiry = ZonedDateTime.now().plusSeconds(jwtTokenProvider.getRefreshTokenExpirationMs() / 1000);
         RefreshToken newRefreshTokenEntity = RefreshToken.builder()
                 .userId(user.getId())
                 .tokenHash(newRefreshTokenRaw)
                 .expiresAt(refreshExpiry)
+                .isRevoked(false)
                 .build();
         refreshTokenRepository.save(newRefreshTokenEntity);
+
+        // 2. Mark old token as revoked instead of hard deleting (enables 30s grace window)
+        storedToken.setRevoked(true);
+        storedToken.setRevokedAt(ZonedDateTime.now());
+        storedToken.setReplacedByToken(newRefreshTokenRaw);
+        refreshTokenRepository.save(storedToken);
 
         log.info("Successfully rotated refresh token for user '{}' with organization id={}", user.getUsername(), orgCtx.id());
 

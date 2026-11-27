@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,6 +34,7 @@ public class PlatformAdminController {
     }
 
     @GetMapping("/organizations")
+    @PreAuthorize("hasRole('PLATFORM_SUPER_ADMIN')")
     public ResponseEntity<List<OrganizationResponse>> getAllOrganizations() {
         log.debug("REST request to get all organizations");
         return ResponseEntity.ok(platformService.getAllOrganizations());
@@ -45,6 +47,7 @@ public class PlatformAdminController {
     }
 
     @PostMapping("/organizations")
+    @PreAuthorize("hasRole('PLATFORM_SUPER_ADMIN')")
     public ResponseEntity<OrganizationResponse> createOrganization(@Valid @RequestBody CreateOrganizationRequest request) {
         log.info("REST request to onboard organization: {}", request.getName());
         OrganizationResponse response = platformService.createOrganization(request);
@@ -52,6 +55,7 @@ public class PlatformAdminController {
     }
 
     @PatchMapping("/organizations/{id}/status")
+    @PreAuthorize("hasRole('PLATFORM_SUPER_ADMIN')")
     public ResponseEntity<OrganizationResponse> updateStatus(
             @PathVariable Long id,
             @Valid @RequestBody UpdateOrganizationStatusRequest request) {
@@ -60,6 +64,7 @@ public class PlatformAdminController {
     }
 
     @GetMapping("/organizations/{id}/analytics")
+    @PreAuthorize("hasRole('PLATFORM_SUPER_ADMIN')")
     public ResponseEntity<TenantAnalyticsResponse> getTenantAnalytics(@PathVariable Long id) {
         log.debug("REST request to get analytics for organization ID: {}", id);
         return ResponseEntity.ok(platformService.getTenantAnalytics(id));

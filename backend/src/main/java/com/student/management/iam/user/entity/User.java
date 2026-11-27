@@ -10,8 +10,10 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Enterprise User entity located in the IAM User Management directory.
@@ -77,8 +79,14 @@ public class User extends BaseEntity implements UserDetails {
         if (role == null || role.isBlank()) {
             return Collections.emptyList();
         }
+        List<GrantedAuthority> authorities = new ArrayList<>();
         String authority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
-        return Collections.singletonList(new SimpleGrantedAuthority(authority));
+        authorities.add(new SimpleGrantedAuthority(authority));
+
+        if (Boolean.TRUE.equals(isSuperAdmin) || "PLATFORM_SUPER_ADMIN".equalsIgnoreCase(role)) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_PLATFORM_SUPER_ADMIN"));
+        }
+        return authorities;
     }
 
     @Override

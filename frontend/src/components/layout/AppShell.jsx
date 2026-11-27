@@ -36,6 +36,7 @@ const NAV_ICONS = {
 };
 import { authService } from '../../services/authService';
 import { platformService } from '../../services/platformService';
+import { applicationService } from '../../services/applicationService';
 import {
   getActiveTenantId,
   setActiveTenantId,
@@ -51,24 +52,80 @@ export default function AppShell({ children, currentTab, onTabChange }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    setCurrentUser(authService.getCurrentUser());
+    const user = authService.getCurrentUser();
+    setCurrentUser(user);
 
-    platformService.getAllOrganizations()
-      .then((orgs) => {
-        if (Array.isArray(orgs)) {
-          setOrganizations(orgs);
-          const current = getActiveTenantId();
-          if (!current && orgs.length > 0) {
-            setSelectedTenantId(orgs[0].id);
-            setActiveTenantId(orgs[0].id);
-            setActiveTenantSlug(orgs[0].slug);
+    const isPlatformAdmin = Boolean(
+      user?.isSuperAdmin ||
+      user?.role === 'PLATFORM_SUPER_ADMIN' ||
+      user?.username === 'superadmin'
+    );
+
+    // Gap 2 Fix: Only Platform Super Admins query platform-wide organizations list
+    if (isPlatformAdmin) {
+      platformService.getAllOrganizations()
+        .then((orgs) => {
+          if (Array.isArray(orgs)) {
+            setOrganizations(orgs);
+            const current = getActiveTenantId();
+            if (!current && orgs.length > 0) {
+              setSelectedTenantId(orgs[0].id);
+              setActiveTenantId(orgs[0].id);
+              setActiveTenantSlug(orgs[0].slug);
+            }
+          }
+        })
+        .catch(() => {
+          // Fallback gracefully
+        });
+    } else if (user) {
+      // Regular tenant user - isolated strictly to their own institutional workspace
+      const tenantOrg = {
+        id: user.organizationId || 1,
+        slug: user.organizationSlug || 'default',
+        name: user.organizationName || 'Institutional Workspace'
+      };
+      setOrganizations([tenantOrg]);
+      setSelectedTenantId(tenantOrg.id);
+      setActiveTenantId(tenantOrg.id);
+      setActiveTenantSlug(tenantOrg.slug);
+    }
+  }, []);
+
+  // Gap 4 Fix: Background Entitlement & Permission Synchronization
+  useEffect(() => {
+    if (!currentUser) return;
+    const activeOrgId = selectedTenantId || currentUser.organizationId;
+    if (!activeOrgId) return;
+
+    applicationService.getUserEntitlements({ orgId: activeOrgId })
+      .then((entitlements) => {
+        if (entitlements && Array.isArray(entitlements.applications)) {
+          const freshAuthorizedApps = entitlements.applications
+            .filter((a) => a.isAuthorized)
+            .map((a) => a.code);
+          const freshPermissions = entitlements.effectivePermissions || [];
+
+          // Compare with current to avoid unnecessary rerenders
+          const currentApps = currentUser.authorizedApplications || [];
+          const hasAppDiff = currentApps.length !== freshAuthorizedApps.length ||
+            freshAuthorizedApps.some((app) => !currentApps.includes(app));
+
+          if (hasAppDiff) {
+            const updated = authService.updateCurrentUser({
+              authorizedApplications: freshAuthorizedApps,
+              permissions: freshPermissions
+            });
+            if (updated) {
+              setCurrentUser(updated);
+            }
           }
         }
       })
-      .catch(() => {
-        // Fallback gracefully
+      .catch((err) => {
+        console.warn('Background entitlement sync silent pass:', err?.message || err);
       });
-  }, []);
+  }, [selectedTenantId, currentUser?.id]);
 
   const currentOrg = organizations.find((o) => o.id === selectedTenantId) || organizations[0];
 
