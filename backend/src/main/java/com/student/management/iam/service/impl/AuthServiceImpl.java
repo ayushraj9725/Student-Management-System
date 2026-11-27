@@ -73,9 +73,10 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthTokenResponse login(LoginRequest request) {
-        log.info("Authentication attempt for user identifier: {}", request.getUsernameOrEmail());
+        String cleanIdentifier = request.getUsernameOrEmail() != null ? request.getUsernameOrEmail().trim() : "";
+        log.info("Authentication attempt for user identifier: {}", cleanIdentifier);
 
-        User user = userRepository.findByUsernameOrEmail(request.getUsernameOrEmail(), request.getUsernameOrEmail())
+        User user = userRepository.findByUsernameOrEmail(cleanIdentifier, cleanIdentifier)
                 .orElseThrow(() -> new BadRequestException("Invalid username or password."));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
