@@ -21,6 +21,7 @@ Welcome to the centralized project documentation directory for the **Student Man
 | [11_tenant_onboarding_and_activation_workflow_specification.md](./11_tenant_onboarding_and_activation_workflow_specification.md) | **Tenant Onboarding & Activation Workflow** | Separation of Platform Admin from School Head, zero-prefill OTP security, expired OTP modal, and enterprise email dispatch. |
 | [12_email_service_and_production_environment_variables_specification.md](./12_email_service_and_production_environment_variables_specification.md) | **Email Service & Secrets Management** | Live SMTP Google relay setup, brand header spoofing/reply-to routing, and CI/CD production environment variable matrix. |
 | [13_iam_module_architecture_and_multi_tenant_data_isolation.md](./13_iam_module_architecture_and_multi_tenant_data_isolation.md) | **IAM Module Architecture & 5-Layer Multi-Tenant Isolation** | Keycloak-style org-level data isolation, 5-layer isolation gates, staff provisioning (Instant vs Email Invite), departments/groups, custom roles, and API contracts. |
+| [16_platform_feature_flag_and_tenant_application_entitlements_specification.md](./16_platform_feature_flag_and_tenant_application_entitlements_specification.md) | **Platform Feature Flags & Tenant Application Entitlements** | Master SaaS application registry, dynamic per-tenant provisioning, 3-tier gating hierarchy, dual-perimeter port isolation, and automated verification tests. |
 
 ---
 
