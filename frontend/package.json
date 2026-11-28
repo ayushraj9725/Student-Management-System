@@ -3,9 +3,10 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
+    "clean": "node -e \"const fs = require('fs'); ['.next', '.next_4000', '.next_4001'].forEach(d => { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) {} });\"",
+    "predev": "npm run clean",
     "dev": "next dev -p 4000",
-    "dev:platform": "next dev -p 4001",
-    "clean": "node -e \"try { require('fs').rmSync('.next', { recursive: true, force: true }); } catch (e) {}\"",
+    "dev:platform": "npm run clean && next dev -p 4001",
     "build": "next build",
     "start": "next start -p 4000",
     "start:platform": "next start -p 4001"

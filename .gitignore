@@ -48,5 +48,5 @@ yarn-error.log*
 Thumbs.db
 ehthumbs.db
 
-.next/
-frontend/.next/
+.next*
+frontend/.next*
