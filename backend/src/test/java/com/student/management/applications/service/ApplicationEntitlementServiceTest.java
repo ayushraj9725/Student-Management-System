@@ -125,8 +125,8 @@ class ApplicationEntitlementServiceTest {
         assertTrue(appMap.get("IAM_GOVERNANCE").getIsAuthorized(), "IAM should be authorized for Principal");
         assertTrue(appMap.get("ATTENDANCE").getIsAuthorized(), "Attendance should be authorized for Principal");
 
-        // FINANCE was NOT in School A's enabledApplications -> Must NOT be authorized even for Principal!
-        assertFalse(appMap.get("FINANCE").getIsAuthorized(), "Finance was disabled by school, must not be authorized");
+        // FEES_FINANCE was NOT in School A's enabledApplications -> Must NOT be authorized even for Principal!
+        assertFalse(appMap.get("FEES_FINANCE").getIsAuthorized(), "Fees & Finance was disabled by school, must not be authorized");
     }
 
     @Test
@@ -191,7 +191,7 @@ class ApplicationEntitlementServiceTest {
 
         assertTrue(appMap.get("STUDENT_MANAGEMENT").getIsAuthorized());
         assertFalse(appMap.get("IAM_GOVERNANCE").getIsAuthorized(), "Teacher does not have rbac:manage");
-        assertFalse(appMap.get("FINANCE").getIsAuthorized(), "Teacher does not have finance:read");
+        assertFalse(appMap.get("FEES_FINANCE").getIsAuthorized(), "Teacher does not have finance:read");
     }
 
     @Test

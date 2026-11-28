@@ -123,7 +123,7 @@ class PlatformAdminServiceTest {
         List<ApplicationModuleCatalogDto> catalog = platformService.getApplicationCatalog();
 
         assertNotNull(catalog);
-        assertEquals(5, catalog.size(), "Catalog should contain exactly 5 tenant-operable modules");
+        assertEquals(11, catalog.size(), "Catalog should contain exactly 11 tenant-operable modules");
 
         // Verify PLATFORM_CONTROL is never offered to school tenants
         boolean hasPlatformControl = catalog.stream().anyMatch(m -> "PLATFORM_CONTROL".equals(m.getCode()));
@@ -133,9 +133,15 @@ class PlatformAdminServiceTest {
         Set<String> codes = new HashSet<>();
         catalog.forEach(m -> codes.add(m.getCode()));
         assertTrue(codes.contains("STUDENT_MANAGEMENT"));
-        assertTrue(codes.contains("IAM_GOVERNANCE"));
+        assertTrue(codes.contains("ADMISSIONS"));
+        assertTrue(codes.contains("STAFF_MANAGEMENT"));
+        assertTrue(codes.contains("ACADEMIC_MANAGEMENT"));
         assertTrue(codes.contains("ATTENDANCE"));
-        assertTrue(codes.contains("EXAMINATION"));
-        assertTrue(codes.contains("FINANCE"));
+        assertTrue(codes.contains("FEES_FINANCE"));
+        assertTrue(codes.contains("EXAMINATIONS"));
+        assertTrue(codes.contains("LIBRARY"));
+        assertTrue(codes.contains("COMMUNICATION"));
+        assertTrue(codes.contains("REPORTS_ANALYTICS"));
+        assertTrue(codes.contains("IAM_GOVERNANCE"));
     }
 }

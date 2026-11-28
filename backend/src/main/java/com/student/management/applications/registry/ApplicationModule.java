@@ -10,7 +10,7 @@ import java.util.Set;
 
 /**
  * Master catalog of application modules available on the My School Care platform.
- * Defines module identity, route, categories, and permission prerequisites.
+ * Represents modular business capabilities that can be entitled to schools via feature flags.
  */
 @Getter
 @RequiredArgsConstructor
@@ -29,25 +29,12 @@ public enum ApplicationModule {
             Collections.singleton("platform:super_admin")
     ),
 
-    IAM_GOVERNANCE(
-            "app-iam",
-            "IAM_GOVERNANCE",
-            "Identity & Access (IAM)",
-            "Manage institutional roles, permissions, staff groups and access visibility.",
-            "/{slug}/admin",
-            "Governance",
-            "#059669",
-            true,
-            false,
-            new HashSet<>(Arrays.asList("rbac:manage", "role:admin"))
-    ),
-
     STUDENT_MANAGEMENT(
             "app-students",
             "STUDENT_MANAGEMENT",
-            "Staff & Student Records",
-            "Enrolled student records, course directories and curriculum semester assignments.",
-            "/students",
+            "Student Management (SIS)",
+            "Central student profile, enrollment history, family/guardians, documents, and lifecycle status.",
+            "/{slug}/students",
             "Academics",
             "#4f46e5",
             true,
@@ -55,43 +42,134 @@ public enum ApplicationModule {
             new HashSet<>(Arrays.asList("student:read", "student:create", "STUDENT_CRUD"))
     ),
 
+    ADMISSIONS(
+            "app-admissions",
+            "ADMISSIONS",
+            "Admissions & Registration",
+            "Enquiry desk, application forms, document verification, and admission approval workflow.",
+            "/{slug}/admissions",
+            "Operations",
+            "#0284c7",
+            true,
+            false,
+            new HashSet<>(Arrays.asList("admission:manage", "admission:read"))
+    ),
+
+    STAFF_MANAGEMENT(
+            "app-staff",
+            "STAFF_MANAGEMENT",
+            "Staff Management",
+            "Employee records, designations, departments, staff documents, and institutional credentials.",
+            "/{slug}/staff",
+            "Operations",
+            "#059669",
+            true,
+            false,
+            new HashSet<>(Arrays.asList("staff:read", "staff:manage"))
+    ),
+
+    ACADEMIC_MANAGEMENT(
+            "app-academics",
+            "ACADEMIC_MANAGEMENT",
+            "Academic Management",
+            "Academic years, classes, sections, subjects, timetable schedules, and teacher assignments.",
+            "/{slug}/academics",
+            "Academics",
+            "#2563eb",
+            true,
+            false,
+            new HashSet<>(Arrays.asList("academic:manage", "academic:read"))
+    ),
+
     ATTENDANCE(
             "app-attendance",
             "ATTENDANCE",
             "Attendance Management",
-            "Daily student roll call, staff biometric tracking and leave management.",
-            null,
+            "Daily student roll-call register, staff biometric logs, and monthly attendance reports.",
+            "/{slug}/attendance",
             "Operations",
             "#9333ea",
-            false,
             true,
+            false,
             new HashSet<>(Arrays.asList("attendance:mark", "ATTENDANCE_MODULE"))
     ),
 
-    EXAMINATION(
+    FEES_FINANCE(
+            "app-finance",
+            "FEES_FINANCE",
+            "Fees & Finance",
+            "Fee structures, tuition invoices, collection receipts, concessions, and dues ledgers.",
+            "/{slug}/fees",
+            "Finance",
+            "#0d9488",
+            true,
+            false,
+            new HashSet<>(Arrays.asList("finance:read", "finance:manage", "fee:read"))
+    ),
+
+    EXAMINATIONS(
             "app-examination",
-            "EXAMINATION",
-            "Examination & Results",
-            "Exam scheduling, term grade books, marks moderation and report cards.",
-            null,
+            "EXAMINATIONS",
+            "Examinations & Results",
+            "Exam scheduling, assessment grading rules, marks entry, and term report card generation.",
+            "/{slug}/examinations",
             "Academics",
             "#ea580c",
-            false,
             true,
+            false,
             new HashSet<>(Arrays.asList("grade:enter", "exam:manage"))
     ),
 
-    FINANCE(
-            "app-finance",
-            "FINANCE",
-            "Fee & Finance Management",
-            "Tuition invoices, fee structure collection, concessions and accounting ledgers.",
-            null,
-            "Finance",
-            "#0d9488",
-            false,
+    LIBRARY(
+            "app-library",
+            "LIBRARY",
+            "Library Management",
+            "Book inventory catalog, ISBN indexing, issue/return circulation, and overdue fine records.",
+            "/{slug}/library",
+            "Operations",
+            "#d97706",
             true,
-            new HashSet<>(Arrays.asList("finance:read", "finance:manage", "fee:read"))
+            false,
+            new HashSet<>(Arrays.asList("library:read", "library:manage"))
+    ),
+
+    COMMUNICATION(
+            "app-communication",
+            "COMMUNICATION",
+            "Communication & Notices",
+            "School circulars, emergency announcements, and parent-staff broadcast communication.",
+            "/{slug}/communication",
+            "Governance",
+            "#7c3aed",
+            true,
+            false,
+            new HashSet<>(Arrays.asList("communication:broadcast", "notice:create"))
+    ),
+
+    REPORTS_ANALYTICS(
+            "app-reports",
+            "REPORTS_ANALYTICS",
+            "Reports & Analytics",
+            "Cross-modular institutional reporting across enrollment, attendance, dues, and academics.",
+            "/{slug}/reports",
+            "Executive",
+            "#db2777",
+            true,
+            false,
+            new HashSet<>(Arrays.asList("report:read", "analytics:view"))
+    ),
+
+    IAM_GOVERNANCE(
+            "app-iam",
+            "IAM_GOVERNANCE",
+            "Identity & Access (IAM)",
+            "Manage institutional roles, permissions, staff groups, and access security.",
+            "/{slug}/admin",
+            "Governance",
+            "#059669",
+            true,
+            false,
+            new HashSet<>(Arrays.asList("rbac:manage", "role:admin"))
     );
 
     private final String id;
@@ -105,4 +183,3 @@ public enum ApplicationModule {
     private final boolean comingSoon;
     private final Set<String> requiredPermissions;
 }
-
